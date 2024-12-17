@@ -1,0 +1,272 @@
+---
+title: "Evidencia 2 | Proyecto Integrador"
+output: html_notebook
+---
+
+**Alumna:** Demmí Elizabeth Zepeda Rubio.
+
+**Matrícula:** A01709619.
+
+**Top 20 países con más casos de COVID-19 (CSSE, 2023), y los Accession Numbers de sus variantes de SARS-Cov-2 de NCBI.**
+
+1\. US - MN985325
+
+2\. JAPAN - LC529905
+
+3\. GERMANY - MT394864
+
+4\. RUSSIA - MT510643
+
+5\. SOUTH KOREA - MT039890
+
+6\. TAIWAN - MT066175
+
+7\. BRAZIL - MT126808
+
+8\. AUSTRIA - MW672353
+
+9\. ITALY - MT008022
+
+10\. UNITED KINGDOM - LR813996
+
+11\. FRANCE - MT320538
+
+12\. MEXICO - MT729361
+
+13\. AUSTRALIA - MT007544
+
+14\. CHILE - MT670013
+
+15\. POLAND - MT499208
+
+16\. CANADA - MW309425
+
+17\. BELGIUM - MT072667
+
+18\. NEW ZEALAND - MT706050
+
+19\. SPAIN - MT198651
+
+20\. CZECHIA - MT371568
+
+**¿Son muy diferentes las variantes entre cada país?**
+
+La mayoría de variantes, según por país, tienen casi la misma cantidad de nucleótidos respectivos a excepción por México, Bélgica e Italia. Las variantes seleccionadas son de a principios del 2020.
+
+**¿Es diferente el SARS-CoV-2 entre las diferentes poblaciones: Asiática, Hispana, Europea o Africana?**
+
+Considero que sí, sin embargo, dichas diferencias son mínimas.
+
+A continuación, se ejecuta el código para el presente proyecto.
+
+Se llaman a las librerías necesarias.
+
+```{r}
+library(BiocManager)
+library(Biostrings)
+library(ggplot2)
+library(ape)
+library(cluster)
+library(ggtree)
+```
+
+Se guarda en una variable el nombre de los países.
+
+```{r}
+nombres_paises <- c("USA",
+                    "JAPAN",
+                    "GERMANY",
+                    "RUSSIA",
+                    "SOUTH KOREA",
+                    "TAIWAN",
+                    "BRAZIL",
+                    "AUSTRIA",
+                    "ITALY",
+                    "UNITED KINGDOM",
+                    "FRANCE",
+                    "MEXICO",
+                    "AUSTRALIA",
+                    "CHILE",
+                    "POLAND",
+                    "CANADA",
+                    "BELGIUM",
+                    "NEW ZEALAND",
+                    "SPAIN", 
+                    "CZECHIA")
+```
+
+Se muestran las rutas de los archivos FASTA.
+
+```{r}
+rutas_paises <- c("D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceUSA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceJAPAN.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceGERMANY.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceRUSSIA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceSOUTHKOREA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceTAIWAN.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceBRAZIL.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceAUSTRIA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceITALY.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceUK.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceFRANCE.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceMEXICO.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceAUSTRALIA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceCHILE.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequencePOLAND.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceCANADA.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceBELGIUM.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceNZ.fasta",
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceSPAIN.fasta", 
+                  "D:\\demmi\\Documents\\R Codes\\Evidencia2\\sequenceCZECHIA.fasta")
+```
+
+Se leen las secuencias de ADN desde los archivos de los países.
+
+```{r}
+secuencias_paises <- lapply(rutas_paises, readDNAStringSet)
+```
+
+Se calcula la longitud de las secuencias.
+
+```{r}
+longitudes <- sapply(secuencias_paises, width)
+```
+
+Se imprimen las longitudes de las secuencias.
+
+```{r}
+cat("Longitudes de las secuencias de ADN por país:\n")
+for (i in seq_along(longitudes)) {
+  cat("País:", basename(nombres_paises[i]), "- Longitud:", longitudes[i], "\n")
+}
+```
+
+Se calculan los nucleótidos de cada secuencia.
+
+```{r}
+nucleotidos_calc <- function(secuencia, pais){
+  nucleotidos <- c("A", "C", "G", "T")
+  freq_nucleotidos <- alphabetFrequency(secuencia, baseOnly = TRUE)
+  names(freq_nucleotidos) <- nucleotidos
+  cat("En secuencia de ", pais, ":\n", sep = "")
+  for (n in nucleotidos){
+    cat(n, ": ", freq_nucleotidos[[n]], "\n", sep = "")
+  }
+  cat("\n")
+}
+```
+
+Se imprimen.
+
+```{r}
+for (i in 1:length(secuencias_paises)) {
+  nucleotidos_calc(secuencias_paises[[i]], basename(nombres_paises[i]))
+}
+```
+
+Se vuelven a calcular los nucleótidos, para después graficarlo.
+
+```{r}
+nucleotidos_frecuencia <- function(secuencia) {
+  nucleotidos <- c("A", "C", "G", "T")
+  freq_nucleotidos <- alphabetFrequency(secuencia, baseOnly = TRUE)
+  return(freq_nucleotidos)
+}
+```
+
+Se calcula frecuencia de nucleótidos para cada país.
+
+```{r}
+frecuencias <- lapply(secuencias_paises, nucleotidos_frecuencia)
+```
+
+Se crea un data frame con los nombres de los países y las frecuencias de nucleótidos.
+
+```{r}
+data <- data.frame(Pais = nombres_paises, do.call(rbind, frecuencias))
+```
+
+Se reordenan las columnas.
+
+```{r}
+data <- data[, c("Pais", "A", "C", "G", "T")]
+```
+
+Se reestructuran los datos a formato largo (tidy).
+
+```{r}
+data_long <- tidyr::gather(data, Nucleotido, Frecuencia, -Pais)
+```
+
+Se grafica.
+
+```{r}
+ggplot(data_long, aes(x = Pais, y = Frecuencia, fill = Nucleotido)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Frecuencia de Nucleótidos por País",
+       x = "País",
+       y = "Frecuencia (cantidad)",
+       fill = "Nucleótido") +
+  scale_fill_manual(values = c("red", "blue", "green", "orange"),
+                    labels = c("A", "C", "G", "T")) +
+  scale_y_continuous(breaks = seq(0, 10000, by = 500), limits = c(0, 10000)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Se convierte la lista de frecuencias en una matriz.
+
+```{r}
+frecuencias_matriz <- do.call(rbind, frecuencias)
+```
+
+Se calcula la distancia entre las secuencias usando la distancia de Jaccard.
+
+```{r}
+distancia_jaccard <- dist(frecuencias_matriz, method = "binary")
+```
+
+Se realiza el análisis jerárquico global.
+
+```{r}
+arbol_jerarquico <- hclust(distancia_jaccard, method = "complete")
+```
+
+Se convierte el resultado a un objeto de clase 'phylo'.
+
+```{r}
+arbol_phylo <- as.phylo(arbol_jerarquico)
+```
+
+Se crea un objeto de clase 'ggtree'.
+
+```{r}
+arbol_ggtree <- ggtree(arbol_phylo)
+```
+
+Se grafica el árbol con ggtree.
+
+```{r}
+arbol_ggtree + 
+  geom_tiplab(align = TRUE, size = 3) +
+  theme_tree2() +
+  labs(title = "Árbol filogenético de países basado en secuencias de ADN",
+       subtitle = "Distancia de Jaccard",
+       caption = "Data source: Sequences",
+       x = "País")
+```
+
+**Para la interpretación de las gráficas.**
+
+En la primera gráfica, se observa la frecuencia de los cuatro nucleótidos y es similar entre los países, con pequeñas variaciones. Aunque las variaciones no son pronunciadas, se comprueba que según el país, SARS-Cov-2 tiende a cambiar según la región.
+
+En la segunda gráfica, el árbol proyecta cómo los países se agrupan en función de la similitud de sus secuencias de ADN.
+
+**Video:** <https://youtu.be/n2pLrERmhns>
+
+**Referencias:**
+
+Center for Systems Science and Engineering (CSSE). (2023). Coronavirus Resource Center. John Hopkins University. <https://coronavirus.jhu.edu/map.html>
+
+V’kovski, P., Kratzel, A., Steiner, S. et al. Coronavirus biology and replication: implications for SARS-CoV-2. Nat Rev Microbiol 19, 155–170 (2021). <https://doi.org/10.1038/s41579-020-00468-6>
+
+Zhou, P., Yang, XL., Wang, XG. et al. A pneumonia outbreak associated with a new coronavirus of probable bat origin. Nature 579, 270–273 (2020). <https://doi.org/10.1038/s41586-020-2012-7>
